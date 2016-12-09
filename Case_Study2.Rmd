@@ -1,6 +1,6 @@
 ---
 title: "CaseStudy2 Notebook"
-author: "Jason Fields"
+author: "Jason Fields & Scott Payne"
 date: "December 3, 2016"
 output:
   html_document: default
@@ -12,8 +12,6 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 #Documenting the code and package versions
 ```{r}
-#library(fpp)
-install.packages("tseries")
 library(tseries)
 sessionInfo()
 ```
@@ -183,20 +181,6 @@ names(high.temp.variation) <- c("Temp", "Country")
 ```
 
 ```{r}
-df <- data.frame(trt = c("a", "b", "c"), outcome = c(2.3, 1.9, 3.2))
-ggplot(df, aes(trt, outcome)) +
-  geom_bar(stat = "identity")
-
-```
-
-
-
-```{r}
-xspace<-seq(1,20,by=1)
-#makeshift spacing to see Temps, need to add country labels
-# ggplot(high.temp.variation, aes(xspace,Temp)) + geom_point()+ xlab("Country") + geom_text(aes(label=high.temp.variation$Country))
-
-#failed country vs temp bar plot
 plot_q4_i<-ggplot(high.temp.variation, aes(Country,Temp, labels(high.temp.variation$Country))) + geom_point(stat="identity")+ xlab("Country") + theme(axis.text.x=element_blank()) + geom_text(aes(label=high.temp.variation$Country))
 plot_q4_i
 ```
@@ -286,9 +270,6 @@ high.CityTemp.variation <- diff.CityTemp[1:20,1:2]
 high.CityTemp.variation$City<-as.character(high.CityTemp.variation$City)
 ```
 ```{r}
-#ggplot(high.CityTemp.variation, aes(x,y=City)) + geom_bar()
-# qplot(x, xspace, data=high.CityTemp.variation,geom="point", xlab="City", ylab="Temperature")
-
 plot_q4_iii<-ggplot(high.CityTemp.variation, aes(City,x, labels(high.CityTemp.variation.variation$City))) + geom_point(stat="identity")+ xlab("City") + ylab("Temp") +  theme(axis.text.x=element_blank()) + geom_text(aes(label=high.CityTemp.variation$City))
 plot_q4_iii
 ```
@@ -298,7 +279,7 @@ plot_q4_iii
 dat<-data.frame(high.temp.variation,high.CityTemp.variation)
 
 ggplot(dat,aes(y=high.temp.variation$Temp,x=high.CityTemp.variation$x))+geom_point() 
-
+#Compare the two plots
 plot_q4_i
 plot_q4_iii
 ```
