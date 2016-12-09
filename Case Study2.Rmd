@@ -1,0 +1,270 @@
+---
+title: "CaseStudy2 Notebook"
+author: "Jason Fields"
+date: "December 3, 2016"
+output: html_notebook
+---
+
+```{r setup, include=TRUE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+#Documenting the code and package versions
+```{r}
+#library(fpp)
+install.packages("tseries")
+library(tseries)
+sessionInfo()
+```
+## Question 1
+Create the X matrix and print it from SAS, R, and Python.
+
+SAS Matrix Input
+
+proc IML;
+
+X = {4 5 1 2, 1 0 3 5, 2 1 8 2}; 
+
+print X;
+
+R Matrix input
+```{r}
+ X <- matrix(c(4, 5, 1, 2, 1, 0, 3, 5, 2, 1, 8, 2),nrow = 3,ncol = 4,byrow = TRUE)
+X
+```
+
+Python Matrix input
+```{python}
+import numpy as np
+X = np.matrix('4, 5, 1, 2; 1, 0, 3, 5; 2, 1, 8, 2')
+print(X)
+```
+
+
+## Question 2
+Please do the following with your assigned stock. 
+Jason & Scott: GW Pharamceuticals (GWPH)  
+*	Download the data.
+*	Calculate log returns.
+*	Calculate volatility measure.
+*	Calculate volatility over entire length of series for various three different decay factors.
+*	Plot the results, overlaying the volatility curves on the data, just as was done in the S&P example.
+
+
+Download the data
+```{r}
+stock_data<-get.hist.quote('GWPH',quote="Close")
+length(stock_data)
+```
+Calculate log returns.
+```{r}
+stock_log<-log(lag(stock_data))-log(stock_data)
+length(stock_log)
+```
+
+Calculate volatility measure.
+```{r}
+stock_vol<-sd(stock_log)*sqrt(250)*100
+print(stock_vol)
+```
+
+Calculate volatility over entire length of series for various three different decay factors.
+```{r}
+## volatility
+Vol <- function(d, logrets)
+{
+	var = 0
+	lam = 0
+	varlist <- c()
+	for (r in logrets) {
+		lam = lam*(1 - 1/d) + 1
+	var = (1 - 1/lam)*var + (1/lam)*r^2
+		varlist <- c(varlist, var)
+	}
+	sqrt(varlist)
+}
+```
+
+Plot the results, overlaying the volatility curves on the data, just as was done in the S&P example.
+```{r}
+# Recreate Figure 6.12 in the text on page 155
+
+volest <- Vol(10,stock_log)
+volest2 <- Vol(30,stock_log)
+volest3 <- Vol(100,stock_log)
+plot(volest,type="l")
+lines(volest2,type="l",col="red")
+lines(volest3, type = "l", col="blue")
+```
+
+## Question 3
+The built-in data set called Orange in R is about the growth of orange trees. The Orange data frame has 3 columns of records of the growth of orange trees.
+
+Variable description
+Tree : an ordered factor indicating the tree on which the measurement is made. The ordering is according to increasing maximum diameter.
+age :  a numeric vector giving the age of the tree (days since 1968/12/31)
+circumference :  a numeric vector of trunk circumferences (mm). This is probably “circumference at breast height”, a standard measurement in forestry.
+
+load the data
+```{r}
+data("Orange")
+Orange
+```
+
+a)	Calculate the mean and the median of the trunk circumferences for different size of the trees. (Tree)
+```{r}
+tree_mean<-aggregate(Orange$circumference, list(Orange$Tree), FUN=mean)
+tree_mean
+tree_median<-aggregate(Orange$circumference, list(Orange$Tree), FUN=median)
+tree_median
+```
+
+
+b)	Make a scatter plot of the trunk circumferences against the age of the tree. Use different plotting symbols for different size of trees.
+
+```{r}
+library(ggplot2)
+ggplot(Orange, aes(y=circumference, x=age, shape=Tree)) +
+    geom_point()     
+```
+
+c)	Display the trunk circumferences on a comparative boxplot against tree. Be sure you order the boxplots in the increasing order of maximum diameter.
+
+```{r}
+ggplot(Orange, aes(y=circumference, x=Tree)) +
+    geom_boxplot() 
+```
+
+## Question 4
+Download “Temp” data set (check your SMU email)
+
+
+```{r}
+temp<-read.csv('Temp.csv', header = TRUE,
+         dec = ".", fill = TRUE )
+head(temp)
+summary(temp)
+```
+
+(i)	Find the difference between the maximum and the minimum monthly average temperatures for each country and report/visualize top 20 countries with the maximum differences for the period since 1900.
+
+
+```{r}
+temp$Country <- as.character(temp$Country)
+
+library(lubridate) 
+#package to parse multiple date formats
+temp$Date <- parse_date_time(x = temp$Date,
+                             orders = c("y-m-d", "m/d/y"),
+                             locale = "eng")
+#select dates 1900 and later
+temp <- temp[temp$Date > "1899-12-1",] 
+
+# Max Average Monthly Temperature by Country
+max.temp <-aggregate(temp$Monthly.AverageTemp, list(temp$Country), FUN=max, na.rm = T)
+
+# Min Average Monthly Temperature by Country
+min.temp <- aggregate(temp$Monthly.AverageTemp, list(temp$Country), FUN=min, na.rm = T)
+
+# Difference in Min and Max
+diff.temp <- (max.temp[2] - min.temp[2])
+
+# Add Countries to temp.diff
+diff.temp$Country <- max.temp[1]
+
+# Sort by largest difference
+diff.temp <- diff.temp[order(-diff.temp$x),]
+
+high.temp.variation <- diff.temp[1:20,]
+```
+(ii)	Select a subset of data called “UStemp” where US land temperatures from 01/01/1990 in Temp data. Use UStemp dataset to answer the followings.
+
+```{r}
+UStemp <- temp[temp$Country == 'United States',]
+head(temp)
+summary(temp)
+```
+a)	Create a new column to display the monthly average land temperatures in Fahrenheit (°F).
+```{r}
+library(weathermetrics)
+UStemp$Monthly.AverageTempF <- convert_temperature(UStemp$Monthly.AverageTemp, old_metric = "celsius", new_metric = "fahrenheit")
+```
+
+b)	Calculate average land temperature by year and plot it. The original file has the average land temperature by month. 
+
+
+```{r}
+ggplot(Yearly, aes(x=Year, y=`UStemp$Monthly.AverageTempF`)) +
+geom_point(shape=1) + xlab("Year") + ylab("Average Temperature in US")
+```
+
+c)	Calculate the one year difference of average land temperature by year and provide the maximum difference (value) with corresponding two years.
+
+
+```{r}
+Yearly <- aggregate(UStemp$Monthly.AverageTempF ~ Year , UStemp, mean, na.rm = T)
+```
+c)	Calculate the one year difference of average land temperature by year and provide the maximum difference (value) with corresponding two years.
+(for example, year 2000: add all 12 monthly averages and divide by 12 to get average temperature in 2000. You can do the same thing for all the available years. Then you can calculate the one year difference as 1991-1990, 1992-1991, etc) 
+
+
+(iii)	Download “CityTemp” data set (check your SMU email). Find the difference between the maximum and the minimum temperatures for each major city and report/visualize top 20 cities with maximum differences for the period since 1900. 
+
+Read in the the CityTemp file.
+```{r}
+CityTemp<-read.csv('CityTemp.csv', header = TRUE,
+         dec = ".", fill = TRUE )
+```
+
+
+Summarize the data
+```{r}
+head(CityTemp)
+summary(CityTemp)
+str(CityTemp)
+```
+
+Align date formats and subset for after the year 1900
+```{r}
+library(lubridate)
+#package to parse multiple date formats and aligbn to single format
+CityTemp$Date <- parse_date_time(x = CityTemp$Date,
+                            orders = c("y-m-d", "m/d/y")
+                            )
+#select dates 1900 and later
+CityTemp <- CityTemp[CityTemp$Date > "1899-12-1",] 
+```
+Reshape the data to do analysis
+```{r}
+library(dplyr, tidyr)
+#drop unneeded columns
+CityTemp<-select(CityTemp, -Latitude, -Longitude  )
+```
+```{r}
+# Max Average Monthly Temperature by City
+max.CityTemp <-aggregate(CityTemp$Monthly.AverageTemp, list(CityTemp$City), FUN=max, na.rm = T)
+
+# Min Average Monthly Temperature by Country
+min.CityTemp <- aggregate(CityTemp$Monthly.AverageTemp, list(CityTemp$City), FUN=min, na.rm = T)
+
+# Difference in Min and Max
+diff.CityTemp <- (max.CityTemp[2] - min.CityTemp[2])
+
+# Add Cities to CityTemp.diff
+diff.CityTemp$City <- max.CityTemp[1]
+
+# Sort by largest difference
+diff.CityTemp <- diff.CityTemp[order(-diff.CityTemp$x),]
+
+high.CityTemp.variation <- diff.CityTemp[1:20,]
+```
+(iv)	Compare the two graphs in (i) and (iii)  and comment it.
+
+```{r}
+dat<-data.frame(high.temp.variation,high.CityTemp.variation)
+
+ggplot(dat,aes(x=x,y=dat$Country))+geom_bar() + geom_text(aes(label=dat$Country), size=3)
+
+ggplot(dat, aes(x,x.1, color=)) + geom_point()
+
+```
+
