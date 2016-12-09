@@ -191,21 +191,24 @@ UStemp$Monthly.AverageTempF <- convert_temperature(UStemp$Monthly.AverageTemp, o
 
 b)	Calculate average land temperature by year and plot it. The original file has the average land temperature by month. 
 
+```{r}
+UStemp$Year <- format(UStemp$Date,format="%Y")
+Yearly <- aggregate(UStemp$Monthly.AverageTempF ~ Year , UStemp, mean, na.rm = T)
+```
 
 ```{r}
 ggplot(Yearly, aes(x=Year, y=`UStemp$Monthly.AverageTempF`)) +
 geom_point(shape=1) + xlab("Year") + ylab("Average Temperature in US")
 ```
 
-c)	Calculate the one year difference of average land temperature by year and provide the maximum difference (value) with corresponding two years.
 
-
-```{r}
-Yearly <- aggregate(UStemp$Monthly.AverageTempF ~ Year , UStemp, mean, na.rm = T)
-```
 c)	Calculate the one year difference of average land temperature by year and provide the maximum difference (value) with corresponding two years.
 (for example, year 2000: add all 12 monthly averages and divide by 12 to get average temperature in 2000. You can do the same thing for all the available years. Then you can calculate the one year difference as 1991-1990, 1992-1991, etc) 
 
+```{r}
+Yearly$two.year <- diff(c(0,Yearly$`UStemp$Monthly.AverageTempF`))
+Yearly$two.year
+```
 
 (iii)	Download “CityTemp” data set (check your SMU email). Find the difference between the maximum and the minimum temperatures for each major city and report/visualize top 20 cities with maximum differences for the period since 1900. 
 
